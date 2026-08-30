@@ -1,0 +1,191 @@
+// Shotflow · 短视频 AI 分镜与资产管理
+// 流程：脚本 → 素材建议 → 资源库 → 分镜提示词 → 审阅评论 / 视频回传
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// draft | scripted | materials | library | storyboard | ready
+model Project {
+  id                  String                @id @default(cuid())
+  title               String
+  brief               String
+  sellingPoints       String                @default("")
+  stylePreset         String                @default("drama_comedy")
+  status              String                @default("draft")
+  /// 工作台当前步骤：script | materials | library | storyboard
+  currentStep         String                @default("script")
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  scripts             Script[]
+  materialSuggestions MaterialSuggestion[]
+  assets              Asset[]
+  comments            Comment[]
+  reviewLinks         ReviewLinkProject[]
+}
+
+model Script {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  content   String
+  /// generated | uploaded
+  source    String   @default("generated")
+  version   Int      @default(1)
+  createdAt DateTime @default(now())
+  shots     Shot[]
+
+  @@index([projectId])
+}
+
+model MaterialSuggestion {
+  id          String   @id @default(cuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  /// character | prop | scene | other
+  category    String
+  name        String
+  description String   @default("")
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  @@index([projectId])
+}
+
+model Asset {
+  id           String      @id @default(cuid())
+  projectId    String
+  project      Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  /// character | prop | scene | other
+  category     String
+  label        String?
+  url          String
+  filename     String?
+  mimeType     String?
+  sortOrder    Int         @default(0)
+  /// owner | reviewer
+  source       String      @default("owner")
+  reviewLinkId String?
+  reviewLink   ReviewLink? @relation(fields: [reviewLinkId], references: [id], onDelete: SetNull)
+  createdAt    DateTime    @default(now())
+  shotRefs     ShotAsset[]
+
+  @@index([projectId])
+  @@index([projectId, category])
+}
+
+model Shot {
+  id           String            @id @default(cuid())
+  scriptId     String
+  script       Script            @relation(fields: [scriptId], references: [id], onDelete: Cascade)
+  sequence     Int
+  title        String?
+  sceneDesc    String
+  prompt       String
+  dialogue     String?
+  durationHint String?
+  refHints     String            @default("[]")
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  refs         ShotAsset[]
+  revisions    PromptRevision[]
+  videos       ShotVideo[]
+  comments     Comment[]
+
+  @@index([scriptId])
+  @@unique([scriptId, sequence])
+}
+
+model ShotAsset {
+  id        String @id @default(cuid())
+  shotId    String
+  assetId   String
+  shot      Shot   @relation(fields: [shotId], references: [id], onDelete: Cascade)
+  asset     Asset  @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  sortOrder Int    @default(0)
+
+  @@unique([shotId, assetId])
+  @@index([shotId])
+  @@index([assetId])
+}
+
+model PromptRevision {
+  id        String   @id @default(cuid())
+  shotId    String
+  shot      Shot     @relation(fields: [shotId], references: [id], onDelete: Cascade)
+  prompt    String
+  feedback  String?
+  createdAt DateTime @default(now())
+
+  @@index([shotId])
+}
+
+/// 主账号回传的分镜成片，多条保留以便对比
+model ShotVideo {
+  id        String   @id @default(cuid())
+  shotId    String
+  shot      Shot     @relation(fields: [shotId], references: [id], onDelete: Cascade)
+  url       String
+  filename  String?
+  mimeType  String?
+  note      String   @default("")
+  createdAt DateTime @default(now())
+
+  @@index([shotId])
+}
+
+/// 免登录审阅链接
+model ReviewLink {
+  id        String              @id @default(cuid())
+  token     String              @unique
+  name      String
+  revokedAt DateTime?
+  createdAt DateTime            @default(now())
+  projects  ReviewLinkProject[]
+  comments  Comment[]
+  assets    Asset[]
+}
+
+model ReviewLinkProject {
+  id           String     @id @default(cuid())
+  reviewLinkId String
+  projectId    String
+  reviewLink   ReviewLink @relation(fields: [reviewLinkId], references: [id], onDelete: Cascade)
+  project      Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewLinkId, projectId])
+  @@index([projectId])
+}
+
+/// targetType: script | materials | library | storyboard | shot
+/// status: pending | resolved
+/// authorRole: owner | reviewer
+model Comment {
+  id           String      @id @default(cuid())
+  projectId    String
+  project      Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  targetType   String
+  targetId     String
+  shotId       String?
+  shot         Shot?       @relation(fields: [shotId], references: [id], onDelete: Cascade)
+  parentId     String?
+  parent       Comment?    @relation("CommentThread", fields: [parentId], references: [id], onDelete: Cascade)
+  replies      Comment[]   @relation("CommentThread")
+  body         String
+  status       String      @default("pending")
+  authorRole   String
+  authorLabel  String      @default("")
+  reviewLinkId String?
+  reviewLink   ReviewLink? @relation(fields: [reviewLinkId], references: [id], onDelete: SetNull)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([projectId, targetType])
+  @@index([shotId])
+  @@index([parentId])
+}
