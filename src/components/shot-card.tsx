@@ -42,10 +42,19 @@ export function ShotCard({ shot }: Props) {
   const viewer = useWorkbench((s) => s.viewer);
   const canEdit = viewer?.canEdit ?? true;
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+  const [pluginReady, setPluginReady] = useState(false);
 
   useEffect(() => {
     setPromptDraft(shot.prompt);
   }, [shot.prompt]);
+
+  useEffect(() => {
+    const sync = () =>
+      setPluginReady(document.documentElement.dataset.shotflowPlugin === "ready");
+    sync();
+    window.addEventListener("shotflow:plugin-ready", sync);
+    return () => window.removeEventListener("shotflow:plugin-ready", sync);
+  }, []);
 
   const imageUrls = shot.refs.map((r) => r.asset.url);
   const dataImages = JSON.stringify(imageUrls);
@@ -356,9 +365,10 @@ export function ShotCard({ shot }: Props) {
       ) : null}
 
       {canEdit ? (
+      <div className="mt-1 flex flex-col gap-1">
       <button
         type="button"
-        className="send-to-plugin mt-1 w-full border border-dashed border-accent/50 bg-accent/5 py-2.5 text-sm font-medium text-accent transition hover:bg-accent/10 disabled:opacity-50"
+        className="send-to-plugin w-full border border-dashed border-accent/50 bg-accent/5 py-2.5 text-sm font-medium text-accent transition hover:bg-accent/10 disabled:opacity-50"
         data-prompt={promptDraft}
         data-images={dataImages}
         data-shot-id={shot.id}
@@ -370,15 +380,21 @@ export function ShotCard({ shot }: Props) {
             setLocalError(check.message);
             return;
           }
-          console.info("[shotflow:send]", {
-            prompt: promptDraft,
-            images: imageUrls,
-            shotId: shot.id,
-          });
+          if (document.documentElement.dataset.shotflowPlugin !== "ready") {
+            setLocalError(
+              "未检测到 Chrome 插件。打开 chrome://extensions → 打开开发者模式 → 加载已解压的扩展程序 → 选本仓库 extension 文件夹。加载后刷新本页。",
+            );
+          }
         }}
       >
-        一键发送
+        一键发送到豆包
       </button>
+      <p className="text-[11px] leading-relaxed text-ink/40">
+        {pluginReady
+          ? "插件已连接。会打开豆包生视频页并填入本镜提示词与参考图（需已登录豆包）。"
+          : "请先安装仓库里的 Chrome 插件 extension/，否则只会提示安装步骤。"}
+      </p>
+      </div>
       ) : null}
 
       {localError ? <p className="text-sm text-red-700">{localError}</p> : null}

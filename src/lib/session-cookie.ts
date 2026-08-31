@@ -102,7 +102,8 @@ export function newReviewToken() {
 }
 
 export function cookieOptions(maxAgeSec: number) {
-  const secure = process.env.NODE_ENV === "production";
+  // 用 http://IP:端口 访问时不能带 Secure，否则浏览器不存登录态
+  const secure = process.env.COOKIE_SECURE === "true";
   return [
     "Path=/",
     "HttpOnly",

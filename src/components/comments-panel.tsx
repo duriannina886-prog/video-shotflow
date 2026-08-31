@@ -129,7 +129,6 @@ export function CommentsPanel({
               <span className="font-medium text-ink/70">
                 {c.authorLabel || (c.authorRole === "owner" ? "主账号" : "审阅")}
               </span>
-              <span>{new Date(c.createdAt).toLocaleString("zh-CN")}</span>
               <span
                 className={
                   c.status === "resolved" ? "text-accent" : "text-amber-800"
@@ -167,8 +166,7 @@ export function CommentsPanel({
                 {c.replies.map((r) => (
                   <li key={r.id}>
                     <p className="text-xs text-ink/45">
-                      {r.authorLabel || "回复"} ·{" "}
-                      {new Date(r.createdAt).toLocaleString("zh-CN")}
+                      {r.authorLabel || "回复"}
                     </p>
                     <p className="whitespace-pre-wrap text-sm text-ink/75">
                       {r.body}

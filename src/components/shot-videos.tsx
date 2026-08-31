@@ -93,8 +93,7 @@ export function ShotVideos({ shot }: Props) {
                 v{videos.length - i}
               </span>
               <span className="text-xs text-ink/50">
-                {new Date(v.createdAt).toLocaleString("zh-CN")}
-                {v.note ? ` · ${v.note}` : ""}
+                {v.note || ""}
               </span>
               <a
                 href={v.url}

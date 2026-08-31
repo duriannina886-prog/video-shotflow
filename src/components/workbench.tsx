@@ -450,7 +450,7 @@ export function Workbench({ projectId }: Props) {
             <div>
               <h2 className="text-lg font-medium text-ink">分镜生视频提示词</h2>
               <p className="mt-1 max-w-xl text-sm text-ink/55">
-                文本框是发给豆包生视频的全文（角色、动作、镜头、对白、音效）。拖图到字后面标注图几。「重新生成分镜」会清空参考图。
+                文本框是发给豆包生视频的全文（角色、动作、镜头、对白、音效）。拖图到字后面标注图几。装好 Chrome 插件后点「一键发送到豆包」。「重新生成分镜」会清空参考图。
               </p>
             </div>
             {canEdit ? (

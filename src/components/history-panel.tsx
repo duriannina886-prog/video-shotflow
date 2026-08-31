@@ -30,9 +30,6 @@ export function HistoryPanel() {
                   <p className="text-ink/70">
                     v{s.version} · {s.source}
                     {s.id === current?.id ? " · 当前" : ""}
-                    <span className="ml-2 font-mono text-[11px] text-ink/40">
-                      {new Date(s.createdAt).toLocaleString("zh-CN")}
-                    </span>
                   </p>
                   {s.id !== current?.id ? (
                     <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap text-xs text-ink/55">
@@ -68,8 +65,7 @@ export function HistoryPanel() {
                         {shot.revisions.map((r) => (
                           <li key={r.id}>
                             <p className="text-ink/40">
-                              {new Date(r.createdAt).toLocaleString("zh-CN")}
-                              {r.feedback ? ` · ${r.feedback}` : ""}
+                              {r.feedback || "修订"}
                             </p>
                             <pre className="whitespace-pre-wrap text-ink/60">
                               {r.prompt.slice(0, 400)}
