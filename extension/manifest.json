@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
   "name": "Shotflow → 豆包",
-  "version": "1.0.0",
+  "version": "1.1.5",
   "description": "从 Shotflow 一键把分镜提示词和参考图填进豆包网页版生视频。",
-  "permissions": ["storage", "tabs", "unlimitedStorage"],
+  "permissions": ["storage", "tabs", "unlimitedStorage", "scripting"],
   "host_permissions": ["<all_urls>"],
   "background": {
     "service_worker": "background.js"
